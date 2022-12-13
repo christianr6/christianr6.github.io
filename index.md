@@ -18,4 +18,4 @@ My GitHub page is http://github.com/christianr6
 
 * Lab 11
 
-    Lab 11, part 2 was one of my favorites because it taught me how to link .h and .cc files. Also, it taught how to create a more efficient and cleaner approach to creating code. I found this usefull for the future programs that a large enough that they need multiple files.
+    Lab 11, part 2 was one of my favorites because it taught me how to link .h and .cc files. Also, it taught how to create a more efficient and cleaner approach to creating code. I found this usefull for the future programs that have a large enough that they need multiple files.
