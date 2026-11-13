@@ -120,7 +120,7 @@ Rules:
 | No reformatting, renaming, or reordering outside the changed logic. | Diff shows zero whitespace-only hunks. |
 | Match the surrounding style exactly. | New code is indistinguishable from neighbors. |
 | No new dependency if the standard library or an existing dependency does the job. | Dependency manifest unchanged or justified. |
-| Net lines of code trend <= 0 for bug fixes and refactors. | Section 6, audit point 4. |
+| Net non-test lines of code trend <= 0 for bug fixes and refactors. | Section 6, audit point 4. |
 | One logical change per commit. | Commit message needs no "and". |
 
 ---
@@ -166,7 +166,7 @@ A Tier 1 or Tier 2 worker MUST stop editing and escalate when any one trigger fi
 
 | # | Trigger | Exact threshold |
 |---|---|---|
-| E1 | Repeated failure | 2 consecutive test or build failures on the same target after 2 distinct fix attempts. |
+| E1 | Repeated failure | The same test or build target fails 2 times in a row, each time after a different fix attempt. |
 | E2 | Conflicting invariants | Two Hard Invariants in the brief cannot both hold, or a test contradicts an invariant. |
 | E3 | Scope breach | The fix requires a file outside Exact Scope, or a public-interface or data-format change. |
 | E4 | Contradicted premise | Evidence shows the Goal rests on a false assumption. |
@@ -214,6 +214,7 @@ Rules:
 - IF a search returns 0 hits -> THEN vary: alternate casing, partial name, string literal, generated or vendored paths. Three distinct strategies, then E6.
 - IF calls are independent -> THEN issue them in parallel in one batch.
 - IF a file was read in this session and not modified since -> THEN do not re-read it.
+- IF another worker, a formatter, or a generator could have changed the file -> THEN re-read only the range in use before editing.
 - IF a fact is needed for a schema -> THEN read the schema or 5 sample rows, never the full dataset.
 - IF an edit succeeded without error -> THEN do not re-read to confirm; run the test instead.
 
@@ -223,7 +224,7 @@ Principle: cached conversation prefixes stay valid only while earlier content is
 
 | Rule | IF | THEN |
 |---|---|---|
-| C1 Append only | New information arrives. | Add it at the end. Never restate, reorder, or rewrite earlier turns. |
+| C1 Append only | New information arrives. | Add it at the end. Never reorder or rewrite earlier turns. Restate earlier content only in a C10 checkpoint. |
 | C2 Correct by append | An earlier statement is wrong. | Append `CORRECTION: <old claim> -> <new claim> (evidence)`. Do not re-derive the whole thread. |
 | C3 Stable first, volatile last | Building a prompt, brief, or config. | Put fixed instructions and schemas first; put timestamps, counters, and run-specific data last. |
 | C4 Record once | A fact is established (path, schema, invariant, decision). | State it once with `path:line`. Reference it afterwards; do not re-fetch. |
@@ -284,7 +285,7 @@ Always requires approval: pull-request creation, merge, force-push, branch delet
 | 1 | Aggregation grain and double counting | State the grain of every table before and after each join. Row count before join == row count after, or the fan-out is intended and aggregated. No sum over a column duplicated by a join. No average of averages; no sum of ratios. Totals reconcile to an independent source or to the sum of parts. Distinct counts are not summed across overlapping groups. | Fix the join or aggregate at the correct grain first. Re-run reconciliation. |
 | 2 | Boundary, off-by-one, and sign conventions | Interval ends: inclusive vs exclusive stated and tested. Empty input, single element, first and last element. Index base 0 vs 1. Date boundaries: time zone, month end, leap day, period start vs end. Sign: debit vs credit, long vs short, inflow vs outflow, return vs loss; one convention per module. Division by zero and denominators near zero. Units and scale (percent vs fraction, basis points, thousands). | Add a test for the failing boundary. Fix. Re-run. |
 | 3 | Zero silent exception swallowing | No bare `except`, empty `catch`, `except: pass`, `|| true`, `2>/dev/null` on a required step, `IFERROR(..., 0)`, `fillna` or `coalesce` that masks missing data, or ignored return code in the diff. Every caught error is re-raised, converted to a specific recovery, or reported with context. | Remove the swallow. Let it fail or handle it explicitly. |
-| 4 | Net lines of code added vs removed | Report `+added / -removed / net`. Bug fix or refactor: net <= 0 expected; net > 0 needs one sentence of justification per +20 lines. Feature: every added function has >= 1 call site and >= 1 test. Zero unused symbols introduced. | Consolidate (2.1) or delete (2.3) until justified. |
+| 4 | Net lines of code added vs removed | Report `+added / -removed / net` for non-test code; report test lines separately (tests are never cut to reach the target). Bug fix or refactor: net <= 0 expected; net > 0 needs one sentence of justification per +20 lines. Feature: every added function has >= 1 call site and >= 1 test. Zero unused symbols introduced. | Consolidate (2.1) or delete (2.3) until justified. |
 
 Adversarial procedure:
 
@@ -349,14 +350,16 @@ Adversarial procedure:
 
 ## APPENDIX: DROP-IN `CLAUDE.md` BLOCK (200 words)
 
-```markdown
-## Staff Engineering Standard (enforced; full text: STAFF_ENGINEERING_STANDARD.md)
+The on-demand version of this block is the project skill `.claude/skills/staff-engineering-standard/SKILL.md`. Use the block when the rules must be in context on every turn.
 
-1. SCOPE: Before editing, state the symptom, root cause, and broken invariant (data grain, state, or math). Reproduce first. Resolve ambiguity from the repository. Ask only about intent, irreversible actions, or conflicting requirements.
-2. MINIMAL DIFF: Fix the cause at its source. Merge duplicate helpers into one parameterized function (target: 75% fewer). Never add wrappers. Delete dead code and unused imports in the same pass. No speculative guards. No unrelated reformatting.
-3. ROUTING: Keep 1-3 step tasks in one loop. Split only independent work with disjoint files. Tier 1 finds. Tier 2 builds. Tier 3 designs and verifies. Escalate to Tier 3 after 2 consecutive failures or any invariant conflict. Brief every worker: Goal | Scope & Files | Invariants | Return Format.
+```markdown
+## Staff Engineering Standard (STAFF_ENGINEERING_STANDARD.md)
+
+1. SCOPE: Before editing, state the symptom, root cause, and broken invariant (data grain, state, or math). Reproduce first. Resolve ambiguity from the repository; ask only about intent or irreversible actions.
+2. MINIMAL DIFF: Fix the cause at source. Merge duplicate helpers into one function (target: 75% fewer); no wrappers. Delete dead code and unused imports in the same pass. No speculative guards or unrelated reformatting.
+3. ROUTING: Keep 1-3 step tasks in one loop. Split only independent, disjoint-file work. Tier 1 finds. Tier 2 builds. Tier 3 designs and verifies. Escalate to Tier 3 after 2 consecutive failures or any invariant conflict. Brief every worker: Goal, Scope, Invariants, Return Format.
 4. CONTEXT: Search symbols before reading. Read ranges, not files. Never re-read unchanged files. Keep context append-only.
-5. OBSTACLES: Diagnose and route around timeouts, empty searches, lint failures, and test failures. Halt on off-limits files, destructive deletions, and missing credentials.
-6. AUDIT before output: grain and double counting; boundaries, off-by-one, signs; no swallowed exceptions; net lines added versus removed. New evidence overturns earlier claims. Say so.
-7. HANDOFF: Conclusion first. One idea per sentence. Define terms before use. End with: Verified Findings | Changes Made | Open Next Step.
+5. OBSTACLES: Route around timeouts, empty searches, and lint or test failures. Halt on off-limits files, destructive deletions, missing credentials.
+6. AUDIT before output: grain and double counting; boundaries, off-by-one, signs; no swallowed exceptions; net lines added versus removed. New evidence overturns earlier claims; say so.
+7. HANDOFF: Conclusion first. One idea per sentence. Define terms before use. End with: Verified Findings, Changes Made, Open Next Step.
 ```
