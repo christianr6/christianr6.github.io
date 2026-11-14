@@ -1,0 +1,14 @@
+{
+  "name": "christianr6-tools",
+  "description": "Claude Code tools for keeping token use and cost down",
+  "owner": {
+    "name": "christianr6"
+  },
+  "plugins": [
+    {
+      "name": "turn-meter",
+      "source": "./.claude/mods/turn-meter",
+      "description": "Shows each turn's input/output tokens, duration and cost above the prompt"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "turn-meter",
+  "version": "0.1.0",
+  "description": "Shows each turn's input/output tokens, duration and cost above the prompt",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "christianr6"
+  }
+}
