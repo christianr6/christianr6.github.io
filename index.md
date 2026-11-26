@@ -23,3 +23,7 @@ My GitHub page is http://github.com/christianr6
 ### Insider Cluster-Buy Radar
 
 A Python project that reads SEC Form 4 filings, flags companies where several officers or directors bought their own stock within 30 days, and backtests what the stock did afterwards. Built with pandas, SQLite and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/insider-radar).
+
+### Bull vs. Bear
+
+Two AI agents argue for and against a stock from its latest SEC annual report, a program checks every quote against the filing word for word, and a third agent judges what survives. Built with Python, the Claude API, SEC EDGAR and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/bull-bear).

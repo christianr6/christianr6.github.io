@@ -1,0 +1,7 @@
+anthropic>=2.14
+beautifulsoup4>=4.12
+lxml>=5.0
+pydantic>=2.7
+requests>=2.31
+streamlit>=1.46
+pytest>=8.0
