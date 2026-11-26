@@ -10,7 +10,7 @@ def cluster(trigger: str, ticker="TEST", name="Testco Inc") -> dict:
     day = pd.Timestamp(trigger)
     return {
         "issuer_cik": "1000", "issuer_name": name, "ticker": ticker, "trigger_date": day,
-        "start_date": day, "end_date": day, "n_insiders": 3, "n_filings": 3,
+        "start_date": day, "end_date": day, "n_insiders": 3, "n_filings": 3, "filing_days": 2,
         "total_value": 150_000.0, "insiders": "A; B; C",
     }
 

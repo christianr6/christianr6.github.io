@@ -14,6 +14,7 @@ import re
 import sqlite3
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 _TICKER = re.compile(r"^[A-Z]{1,5}([.\-][A-Z]{1,2})?$")
@@ -25,7 +26,7 @@ PURCHASE_COLUMNS = [
 ]
 CLUSTER_COLUMNS = [
     "issuer_cik", "issuer_name", "ticker", "trigger_date", "start_date", "end_date",
-    "n_insiders", "n_filings", "total_value", "insiders",
+    "n_insiders", "n_filings", "filing_days", "total_value", "insiders",
 ]
 
 
@@ -156,9 +157,16 @@ def _summarize(members: pd.DataFrame, trigger: pd.Timestamp) -> dict:
         "end_date": members["filing_date"].max(),
         "n_insiders": members["insider_cik"].nunique(),
         "n_filings": len(members),
+        # 1 means everyone filed on the same day: often an offering or placement
+        # the insiders took part in together, not separate decisions to buy.
+        "filing_days": members["filing_date"].nunique(),
         "total_value": float(members["value"].sum()),
         "insiders": "; ".join(names),
     }
+
+
+def _as_timestamp(day: int) -> pd.Timestamp:
+    return pd.Timestamp(np.datetime64(int(day), "D"))
 
 
 def find_clusters(purchases: pd.DataFrame, params: ClusterParams) -> pd.DataFrame:
@@ -173,25 +181,32 @@ def find_clusters(purchases: pd.DataFrame, params: ClusterParams) -> pd.DataFram
     if purchases.empty:
         return pd.DataFrame(columns=CLUSTER_COLUMNS)
 
-    window = pd.Timedelta(days=params.window_days)
+    # Most companies never have enough different buyers; skip them up front.
+    buyers = purchases.groupby("issuer_cik")["insider_cik"].transform("nunique")
+    candidates = purchases[buyers >= params.min_insiders]
     found = []
-    for _, company in purchases.groupby("issuer_cik", sort=False):
+    for _, company in candidates.groupby("issuer_cik", sort=False):
         company = company.sort_values("filing_date")
-        trigger, member_index = None, set()
-        for day in company["filing_date"].drop_duplicates():
-            recent = company[(company["filing_date"] > day - window) & (company["filing_date"] <= day)]
-            crowded = recent["insider_cik"].nunique() >= params.min_insiders
+        days = company["filing_date"].to_numpy().astype("datetime64[D]").astype("int64")
+        insiders = company["insider_cik"].to_numpy()
+        # Rows are date-sorted, so a cluster's members are one contiguous slice.
+        trigger, first_row, last_row = None, 0, 0
+        for day in np.unique(days):
+            low = int(np.searchsorted(days, day - params.window_days, side="right"))
+            high = int(np.searchsorted(days, day, side="right"))
+            crowded = len(set(insiders[low:high])) >= params.min_insiders
             if crowded:
                 if trigger is None:
-                    trigger = day
-                member_index |= set(recent.index)
+                    trigger, first_row = day, low
+                last_row = high
             elif trigger is not None:
-                found.append(_summarize(company.loc[sorted(member_index)], trigger))
-                trigger, member_index = None, set()
+                found.append(_summarize(company.iloc[first_row:last_row], _as_timestamp(trigger)))
+                trigger = None
         if trigger is not None:
-            found.append(_summarize(company.loc[sorted(member_index)], trigger))
+            found.append(_summarize(company.iloc[first_row:last_row], _as_timestamp(trigger)))
 
     clusters = pd.DataFrame(found, columns=CLUSTER_COLUMNS)
+    clusters["trigger_date"] = clusters["trigger_date"].astype(purchases["filing_date"].dtype)
     return clusters.sort_values("trigger_date", ascending=False).reset_index(drop=True)
 
 

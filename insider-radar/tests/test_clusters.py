@@ -146,6 +146,17 @@ def test_two_bursts_far_apart_are_two_clusters(load):
     assert list(found["trigger_date"]) == [pd.Timestamp("2024-06-05"), pd.Timestamp("2024-01-04")]
 
 
+def test_filing_days_separates_same_day_bursts_from_spread_out_buying(load):
+    conn = load([
+        filing("2024-03-05", 11), filing("2024-03-05", 12), filing("2024-03-05", 13),
+        filing("2024-03-01", 21, issuer=2000, ticker="OTHR"),
+        filing("2024-03-08", 22, issuer=2000, ticker="OTHR"),
+        filing("2024-03-15", 23, issuer=2000, ticker="OTHR"),
+    ])
+    days = find(conn).set_index("ticker")["filing_days"]
+    assert days["TEST"] == 1 and days["OTHR"] == 3
+
+
 def test_members_of_returns_the_purchases_behind_a_cluster(load):
     conn = load([
         filing("2024-03-01", 11), filing("2024-03-10", 12), filing("2024-03-20", 13),
