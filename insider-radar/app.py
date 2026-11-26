@@ -100,7 +100,7 @@ def path_chart(path: pd.DataFrame) -> alt.LayerChart:
     zero = alt.Chart(pd.DataFrame({"y": [0.0]})).mark_rule(strokeWidth=1, color="#9c9c9c").encode(y="y:Q")
     line = base.mark_line(strokeWidth=2, color=series_color(), strokeJoin="round", strokeCap="round").encode(
         x=alt.X("day:Q", title="Trading days since entry"),
-        y=alt.Y("mean_abnormal:Q", title="Mean return vs. benchmark", axis=alt.Axis(format="+.0%")),
+        y=alt.Y("mean_abnormal:Q", title="Mean return vs. benchmark", axis=alt.Axis(format="+.1%")),
     )
     tooltip = [
         alt.Tooltip("mean_abnormal:Q", title="Vs. benchmark", format="+.2%"),
@@ -144,6 +144,11 @@ with st.sidebar:
         value=True,
         help="Rule 10b5-1 trades are set up in advance, so they say little about what the insider thinks today.",
     )
+    spread_only = st.checkbox(
+        "Skip same-day bursts",
+        value=False,
+        help="Drop clusters where every insider filed on one day. Those are often a shared offering, not separate decisions.",
+    )
     st.caption(
         f"{covered['form4s']:,} Form 4 filings, {covered['first']} to {covered['last']}. "
         "Dates are filing dates: the day each trade became public."
@@ -157,6 +162,8 @@ params = cl.ClusterParams(
     exclude_10b5_1=drop_plans,
 )
 purchases, clusters = scan(str(DB_PATH), version, params)
+if spread_only:
+    clusters = clusters[clusters["filing_days"] > 1].reset_index(drop=True)
 
 radar_tab, backtest_tab, method_tab = st.tabs(["Radar", "Backtest", "Method"])
 
@@ -173,7 +180,7 @@ with radar_tab:
     else:
         st.subheader("Clusters, newest first")
         st.caption("Select a row to see who bought and what the stock did.")
-        table = clusters[["trigger_date", "ticker", "issuer_name", "n_insiders", "total_value", "insiders"]].copy()
+        table = clusters[["trigger_date", "ticker", "issuer_name", "n_insiders", "filing_days", "total_value", "insiders"]].copy()
         table["total_value"] = table["total_value"].round()
         picked = st.dataframe(
             table,
@@ -186,6 +193,7 @@ with radar_tab:
                 "ticker": "Ticker",
                 "issuer_name": "Company",
                 "n_insiders": st.column_config.NumberColumn("Insiders"),
+                "filing_days": st.column_config.NumberColumn("Filing days", help="1 = everyone filed on the same day"),
                 "total_value": st.column_config.NumberColumn("Bought ($)", format="localized"),
                 "insiders": "Who",
             },
@@ -231,7 +239,7 @@ with backtest_tab:
         "For every cluster: buy at the close of the first trading day **after** it became public, "
         "hold, and compare with the S&P 500 (SPY) over the same dates."
     )
-    key = ("backtest", params, version)
+    key = ("backtest", params, version, spread_only)
     if clusters.empty:
         st.info("No clusters to test.")
     else:

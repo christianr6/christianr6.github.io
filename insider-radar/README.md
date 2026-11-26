@@ -9,9 +9,30 @@ SEC bulk Form 4 files -> SQLite -> open-market buys -> cluster rule -> dashboard
                                                         30 days)
 ```
 
-**Status:** the pipeline is built and covered by 59 tests that run on small
-synthetic filings. It has not been run on real SEC data yet, so there are no
-results to report here.
+## Result on real data
+
+Run on 2026-11-26 over 669,110 Form 4 filings from 2023-01-03 to 2026-09-30
+(prices through 2026-11-25), default rule: 1,778 clusters, 1,535 with prices.
+
+| Held | Clusters | Mean vs. SPY | Median vs. SPY | Beat SPY | t-stat |
+|---|---|---|---|---|---|
+| 1 month | 1,535 | +0.6% | -1.0% | 46% | 1.14 |
+| 3 months | 1,492 | -0.3% | -3.3% | 43% | -0.30 |
+| 6 months | 1,394 | -1.6% | -7.4% | 40% | -1.25 |
+
+**No edge.** The average cluster did not beat the S&P 500, the typical one
+lagged it, and nothing is statistically distinguishable from zero. Against a
+small-cap benchmark (IWM) the means are +0.8%, +0.4% and +0.1%, still with
+fewer than half the clusters ahead. The biases listed below all push these
+numbers up, so the true picture is no better.
+
+Two things the real data showed:
+
+- **Same-day bursts are a different animal.** In 324 clusters every insider
+  filed on one day, often a shared offering. Those lagged SPY by 6.7% on
+  average over 6 months. The `filing_days` column marks them.
+- **A few rockets carry the mean.** Returns ranged from -100% to +380% over
+  6 months, so the median and the share that beat SPY say more than the mean.
 
 ## Run it
 
