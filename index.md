@@ -27,3 +27,7 @@ A Python project that reads SEC Form 4 filings, flags companies where several of
 ### Bull vs. Bear
 
 Two AI agents argue for and against a stock from its latest SEC annual report, a program checks every quote against the filing word for word, and a third agent judges what survives. Built with Python, the Claude API, SEC EDGAR and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/bull-bear).
+
+### Money Mule Ring Detector
+
+A Python project that finds money laundering in 5 million synthetic bank transactions by building features from the payment network, then groups flagged transfers into rings and checks them against the labeled answer key. Built with pandas, LightGBM, PyTorch Geometric and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/mule-rings).

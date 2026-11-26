@@ -1,0 +1,11 @@
+pandas>=2.2
+numpy>=2.0
+scipy>=1.13
+scikit-learn>=1.5
+lightgbm>=4.6
+streamlit>=1.46
+altair>=5.5
+pytest>=8.0
+# Only for the graph neural network (python -m mule_rings.gnn):
+# torch>=2.5
+# torch_geometric>=2.6
