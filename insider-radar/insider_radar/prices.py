@@ -64,12 +64,14 @@ class YahooChart:
         for attempt in range(4):
             time.sleep(self.pause)
             response = self.http.get(self.URL.format(symbol=symbol), params=params, timeout=30)
-            if response.status_code == 404:
-                return _empty()
             if response.status_code == 429 or response.status_code >= 500:
                 time.sleep(2**attempt)
                 continue
-            response.raise_for_status()
+            if response.status_code >= 400:
+                # 404 = unknown symbol; 400 = no data in this range (for
+                # example the stock was delisted before it). Either way
+                # there are no prices, which the backtest reports.
+                return _empty()
             return parse_yahoo_chart(response.json())
         raise RuntimeError(f"Price source kept failing for {ticker} (last status {response.status_code})")
 

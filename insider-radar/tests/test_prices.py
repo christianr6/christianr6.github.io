@@ -5,7 +5,7 @@ import pandas as pd
 from conftest import FakePrices, business_days
 
 from insider_radar import sec
-from insider_radar.prices import PriceCache, parse_yahoo_chart
+from insider_radar.prices import PriceCache, YahooChart, parse_yahoo_chart
 
 SERIES = business_days("2024-01-01", 60, 100 + np.arange(60))
 
@@ -78,3 +78,27 @@ def test_downloads_refuse_to_run_without_a_declared_user_agent(monkeypatch):
         assert "SEC_USER_AGENT" in str(problem)
     else:
         raise AssertionError("expected MissingUserAgent")
+
+
+class _Answer:
+    def __init__(self, status):
+        self.status_code = status
+
+    def json(self):
+        return {}
+
+
+class _Http:
+    headers: dict = {}
+
+    def __init__(self, status):
+        self.status = status
+
+    def get(self, *args, **kwargs):
+        return _Answer(self.status)
+
+
+def test_a_ticker_the_source_rejects_means_no_prices_not_a_crash():
+    for status in (400, 404):
+        source = YahooChart(pause=0, http=_Http(status))
+        assert source.history("GONE", date(2024, 1, 1), date(2024, 2, 1)).empty
