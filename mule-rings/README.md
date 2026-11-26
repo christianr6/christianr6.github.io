@@ -18,8 +18,9 @@ first six days, threshold picked on the next two, scored on the last two
 
 | Model | Flags that are right | Laundering caught | F1 |
 |---|---|---|---|
-| Single-transaction features | 13% | 16% | 0.14 |
-| Plus graph features | 88% | 45% | 0.59 |
+| Boosted trees, single-transaction features | 13% | 16% | 0.14 |
+| Boosted trees, plus graph features | 88% | 45% | 0.59 |
+| Graph neural network | 7% | 27% | 0.11 |
 
 - **Graph features carry the result.** Amount, currency and payment format
   alone find little. Adding how connected each account is and how quickly
@@ -31,6 +32,22 @@ first six days, threshold picked on the next two, scored on the last two
 - **Rings:** the flags form 82 groups of three or more accounts, and 81 of
   them are mostly real laundering. Of the 86 labeled rings with at least three
   transactions in the test days, 75 had half or more of those transactions flagged.
+
+## The graph neural network lost
+
+The network in `mule_rings/gnn.py` scored F1 0.11, below even the trees that
+see one transaction at a time. That is a result about this network, not about
+graph neural networks:
+
+- **It trained briefly.** 120 full passes in 35 minutes on 4 CPU cores, with
+  one weight update per pass. Its validation score was still unstable at the end.
+- **It sees less.** To fit in 16 GB it passes messages over account pairs, not
+  single transactions, and it gets none of the timing features the trees use.
+- **It is the plain version.** Published networks that do well on this data
+  add more machinery than two message-passing layers.
+
+The lesson I would keep: hand-built graph features in a tree model are a
+strong, cheap baseline, and a neural network has to beat it to earn its cost.
 
 ## The leak
 
@@ -49,11 +66,12 @@ pip install -r requirements.txt
 # https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml
 
 python -m mule_rings          # about 5 minutes on 4 CPU cores; writes results/summary.json
+python -m mule_rings.gnn      # optional: needs torch and torch_geometric, 35 minutes, 16 GB RAM
 streamlit run app.py          # dashboard; reads results/, not the raw data
 python -m pytest              # tests on a tiny hand-made ledger
 ```
 
-The dashboard works straight from the committed `results/summary.json`.
+The dashboard works straight from the committed files in `results/`.
 
 ## Limits
 
