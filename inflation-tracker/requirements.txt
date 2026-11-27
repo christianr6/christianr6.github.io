@@ -1,0 +1,6 @@
+pandas>=2.2
+requests>=2.31
+streamlit>=1.46
+altair>=5.5
+pytest>=8.0
+# Receipt photos also need the Tesseract program: https://tesseract-ocr.github.io/

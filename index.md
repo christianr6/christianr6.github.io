@@ -31,3 +31,7 @@ Two AI agents argue for and against a stock from its latest SEC annual report, a
 ### Money Mule Ring Detector
 
 A Python project that finds money laundering in 5 million synthetic bank transactions by building features from the payment network, then groups flagged transfers into rings and checks them against the labeled answer key. Built with pandas, LightGBM, PyTorch Geometric and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/mule-rings).
+
+### Personal Inflation Tracker
+
+A Python project that works out your own inflation rate by re-weighting official BLS price indexes with your spending, and compares what you paid for groceries and gas with U.S. average prices, starting from a spreadsheet or a receipt photo. Built with pandas, the BLS API, Tesseract OCR and Streamlit. [Code and write-up](https://github.com/christianr6/christianr6.github.io/tree/main/inflation-tracker).
